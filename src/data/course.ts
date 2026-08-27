@@ -50,3 +50,32 @@ export const htmlCourse: Course = {
     },
   ],
 }
+
+export const designPatternsCourse: Course = {
+  id: 'design-patterns',
+  title: '디자인 패턴에 뛰어들기',
+  subtitle: '22개 디자인 패턴을 한 흐름으로 이해하는 인터랙티브 슬라이드',
+  description: '생성·구조·행동 패턴의 핵심과 적용 기준을 시각적인 HTML 교안으로 익힙니다.',
+  level: '중급',
+  duration: '약 90분',
+  lessons: [
+    {
+      id: 'design-patterns-lecture',
+      number: '01',
+      title: '22개 디자인 패턴',
+      duration: '90분',
+      blocks: [
+        {
+          type: 'html',
+          id: 'design-patterns-slides',
+          src: 'courses/design-patterns/lecture-design-patterns.html',
+          title: '디자인 패턴에 뛰어들기',
+          description: '교안 안의 다음 버튼이나 방향키를 사용하세요. 마지막 슬라이드까지 학습하면 완료됩니다.',
+          required: true,
+        },
+      ],
+    },
+  ],
+}
+
+export const courses: Course[] = [htmlCourse, designPatternsCourse]

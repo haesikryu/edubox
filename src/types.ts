@@ -11,8 +11,16 @@ export type QuizBlock = {
   answer: string
   explanation: string
 }
+export type HtmlBlock = {
+  type: 'html'
+  id: string
+  src: string
+  title: string
+  description?: string
+  required?: boolean
+}
 
-export type ContentBlock = TextBlock | CodeBlock | RevealBlock | ListBlock | QuizBlock
+export type ContentBlock = TextBlock | CodeBlock | RevealBlock | ListBlock | QuizBlock | HtmlBlock
 
 export type LessonPage = {
   id: string
