@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check, RotateCcw } from 'lucide-react'
 import type { QuizBlock } from '../types'
 
 export function Quiz({ block, passed, onPass }: { block: QuizBlock; passed: boolean; onPass: () => void }) {
   const [value, setValue] = useState('')
   const [result, setResult] = useState<'idle' | 'wrong' | 'right'>(passed ? 'right' : 'idle')
+
+  useEffect(() => {
+    setValue('')
+    setResult(passed ? 'right' : 'idle')
+  }, [block.id, passed])
 
   const submit = () => {
     const correct = value.trim().toLowerCase() === block.answer.trim().toLowerCase()

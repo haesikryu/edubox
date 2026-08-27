@@ -79,7 +79,7 @@ function App() {
       </aside>
       <main className="lesson-main">
         <header className="lesson-top"><button className="menu-button" onClick={() => setSidebarOpen(true)}><Menu /></button><div><BookOpen size={16} /><span>레슨 {lesson.number}</span><i />{lesson.duration}</div><Logo compact /></header>
-        <article className="lesson-content"><div className="lesson-title"><span>{lesson.number}</span><h1>{lesson.title}</h1><p>{course.subtitle}</p></div>{lesson.blocks.map((block, index) => <ContentBlock key={`${block.type}-${index}`} block={block} passed={(block.type === 'quiz' || block.type === 'html') && progress.passedQuizzes.includes(block.id)} onQuizPass={passQuiz} />)}</article>
+        <article className="lesson-content"><div className="lesson-title"><span>{lesson.number}</span><h1>{lesson.title}</h1><p>{course.subtitle}</p></div>{lesson.blocks.map((block, index) => <ContentBlock key={`${block.type}-${'id' in block ? block.id : index}`} block={block} passed={(block.type === 'quiz' || block.type === 'html') && progress.passedQuizzes.includes(block.id)} onQuizPass={passQuiz} />)}</article>
         <footer className="lesson-footer"><button className="prev" disabled={current === 0} onClick={() => { setCurrent(current - 1); window.scrollTo(0, 0) }}><ArrowLeft size={18} /> 이전 레슨</button><div>{!canComplete && <p>필수 학습을 완료하면 다음 단계가 열립니다.</p>}<button className="next" disabled={!canComplete} onClick={goNext}>{current === course.lessons.length - 1 ? '강의 완료하기' : '다음 레슨'} <ArrowRight size={18} /></button></div></footer>
       </main>
       {sidebarOpen && <button className="sidebar-overlay" aria-label="메뉴 닫기" onClick={() => setSidebarOpen(false)} />}
