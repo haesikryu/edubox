@@ -1251,6 +1251,10 @@ interface CDN
 </div>
 <script>
 (function(){
+  const params=new URLSearchParams(location.search);
+  const embed=params.get('embed')==='1';
+  const embedSlide=Math.max(1,parseInt(params.get('slide')||'1'));
+  const blockId=params.get('blockId')||'design-patterns-slides';
   const stage=document.getElementById('stage');
   const slides=[...document.querySelectorAll('.slide')];
   const partEl=document.querySelector('#chrome .part');
@@ -1278,8 +1282,8 @@ interface CDN
     prog.style.width=((si)/(slides.length-1)*100)+'%';
     btnPrev.disabled=(si===0&&fi===0);
     btnNext.disabled=(si===slides.length-1&&fi===maxF);
-    if(si===slides.length-1&&fi===maxF){
-      window.parent.postMessage({type:'EDUBOX_COMPLETE',blockId:'design-patterns-slides'},location.origin);
+    if((embed||si===slides.length-1)&&fi===maxF){
+      window.parent.postMessage({type:'EDUBOX_COMPLETE',blockId},location.origin);
     }
   }
   function show(n,atEnd){
@@ -1291,17 +1295,17 @@ interface CDN
     paint();
     location.hash='#'+(si+1);
   }
-  function next(){ if(fi<maxF){fi++;paint();} else if(si<slides.length-1){show(si+1,false);} }
-  function prev(){ if(fi>0){fi--;paint();} else if(si>0){show(si-1,true);} }
+  function next(){ if(fi<maxF){fi++;paint();} else if(!embed&&si<slides.length-1){show(si+1,false);} }
+  function prev(){ if(fi>0){fi--;paint();} else if(!embed&&si>0){show(si-1,true);} }
 
   addEventListener('keydown',e=>{
     const k=e.key;
     if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='Enter'){e.preventDefault();next();}
     else if(k==='ArrowLeft'||k==='PageUp'||k==='Backspace'){e.preventDefault();prev();}
-    else if(k==='ArrowDown'){e.preventDefault();show(si+1,false);}
-    else if(k==='ArrowUp'){e.preventDefault();show(si-1,false);}
-    else if(k==='Home'){show(0,false);}
-    else if(k==='End'){show(slides.length-1,true);}
+    else if(k==='ArrowDown'&&!embed){e.preventDefault();show(si+1,false);}
+    else if(k==='ArrowUp'&&!embed){e.preventDefault();show(si-1,false);}
+    else if(k==='Home'&&!embed){show(0,false);}
+    else if(k==='End'&&!embed){show(slides.length-1,true);}
     else if(k==='f'||k==='F'){toggleFull();}
     else if(k==='Escape'){document.exitFullscreen?.();}
   });
@@ -1329,7 +1333,7 @@ interface CDN
     fit();
   });
 
-  const h=parseInt(location.hash.slice(1)); 
+  const h=embed?embedSlide:parseInt(location.hash.slice(1));
   slides[0].classList.add('active');
   show(h&&h>0?h-1:0,false);
 })();
