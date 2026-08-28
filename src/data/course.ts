@@ -1,4 +1,5 @@
 import type { Course } from '../types'
+import { designPatternLessons } from './designPatternLessons'
 
 export const htmlCourse: Course = {
   id: 'html-foundations',
@@ -51,42 +52,14 @@ export const htmlCourse: Course = {
   ],
 }
 
-const designPatternSlides = [
-  ['', '표지'], ['', '학습 지도'],
-  ['PART 1 · 객체지향의 토대', 'Part 1 시작'], ['PART 1 · 객체지향의 토대', '객체와 클래스'], ['PART 1 · 객체지향의 토대', '클래스 계층구조'], ['PART 1 · 객체지향의 토대', 'OOP의 네 기둥'], ['PART 1 · 객체지향의 토대', '추상화와 캡슐화'], ['PART 1 · 객체지향의 토대', '상속과 다형성'], ['PART 1 · 객체지향의 토대', '객체 간의 관계'],
-  ['PART 2 · 디자인 패턴이란', 'Part 2 시작'], ['PART 2 · 디자인 패턴이란', '디자인 패턴이란?'], ['PART 2 · 디자인 패턴이란', '패턴 설명의 구성'], ['PART 2 · 디자인 패턴이란', '역사와 분류'], ['PART 2 · 디자인 패턴이란', '왜 배워야 할까요?'],
-  ['PART 3 · 설계 원칙', 'Part 3 시작'], ['PART 3 · 설계 원칙', '좋은 디자인의 특징'], ['PART 3 · 설계 원칙', '변화하는 내용을 캡슐화하세요'], ['PART 3 · 설계 원칙', '인터페이스에 프로그래밍하세요'], ['PART 3 · 설계 원칙', '상속보다 합성을 사용하세요'], ['PART 3 · 설계 원칙', 'SOLID 개요'], ['PART 3 · 설계 원칙', '단일 책임 원칙'], ['PART 3 · 설계 원칙', '개방/폐쇄 원칙'], ['PART 3 · 설계 원칙', '리스코프 치환 원칙'], ['PART 3 · 설계 원칙', '인터페이스 분리 원칙'], ['PART 3 · 설계 원칙', '의존관계 역전 원칙'],
-  ['PART 4 · 생성 패턴', '생성 패턴 시작'], ['PART 4 · 생성 패턴', '팩토리 메서드'], ['PART 4 · 생성 패턴', '추상 팩토리'], ['PART 4 · 생성 패턴', '빌더'], ['PART 4 · 생성 패턴', '프로토타입'], ['PART 4 · 생성 패턴', '싱글턴'],
-  ['PART 4 · 구조 패턴', '구조 패턴 시작'], ['PART 4 · 구조 패턴', '어댑터'], ['PART 4 · 구조 패턴', '브리지'], ['PART 4 · 구조 패턴', '복합체'], ['PART 4 · 구조 패턴', '데코레이터'], ['PART 4 · 구조 패턴', '퍼사드'], ['PART 4 · 구조 패턴', '플라이웨이트'], ['PART 4 · 구조 패턴', '프록시'],
-  ['PART 5 · 행동 패턴', '행동 패턴 시작'], ['PART 5 · 행동 패턴', '책임 연쇄'], ['PART 5 · 행동 패턴', '커맨드'], ['PART 5 · 행동 패턴', '반복자'], ['PART 5 · 행동 패턴', '중재자'], ['PART 5 · 행동 패턴', '메멘토'], ['PART 5 · 행동 패턴', '옵서버'], ['PART 5 · 행동 패턴', '상태'], ['PART 5 · 행동 패턴', '전략'], ['PART 5 · 행동 패턴', '템플릿 메서드'], ['PART 5 · 행동 패턴', '비지터'],
-  ['PART 5 · 정리와 적용', '22패턴 한눈에'], ['PART 5 · 정리와 적용', '증상 기반 적용 가이드'], ['PART 5 · 정리와 적용', '패턴 사용 시 주의'], ['', '마무리'],
-] as const
-
 export const designPatternsCourse: Course = {
   id: 'design-patterns',
   title: '디자인 패턴에 뛰어들기',
-  subtitle: '원본 54개 슬라이드의 설명·도표·코드를 빠짐없이 학습하는 전체 강의',
-  description: '객체지향의 토대부터 22개 디자인 패턴과 적용 가이드까지 원본 교안 전체를 학습합니다.',
+  subtitle: '원본 54개 슬라이드의 전체 내용을 EduBox 스타일로 읽는 강의',
+  description: '객체지향의 토대부터 22개 디자인 패턴과 적용 가이드까지 원본 교안 전체를 네이티브 화면으로 학습합니다.',
   level: '중급',
   duration: '약 180분',
-  lessons: designPatternSlides.map(([part, title], index) => {
-    const number = String(index + 1).padStart(2, '0')
-    const blockId = `design-pattern-slide-${number}`
-    return {
-      id: blockId,
-      number,
-      title,
-      duration: '3분',
-      blocks: [{
-        type: 'html' as const,
-        id: blockId,
-        src: `courses/design-patterns/lecture-design-patterns.html?embed=1&slide=${index + 1}&blockId=${blockId}`,
-        title: part || '디자인 패턴에 뛰어들기',
-        description: '슬라이드 안의 다음 버튼 또는 방향키로 모든 단계별 내용을 확인하세요.',
-        required: true,
-      }],
-    }
-  }),
+  lessons: designPatternLessons,
 }
 
 export const courses: Course[] = [htmlCourse, designPatternsCourse]
