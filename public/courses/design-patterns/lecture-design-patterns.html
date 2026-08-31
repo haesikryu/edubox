@@ -25,8 +25,8 @@ body{font-family:var(--f-sans);color:var(--ink);
   word-break:keep-all;overflow-wrap:break-word;line-break:strict;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 
-#viewport{position:fixed;inset:0;display:grid;place-items:center}
-#stage{width:1920px;height:1080px;position:relative;transform-origin:center center;
+#viewport{position:fixed;inset:0;overflow:hidden}
+#stage{width:1920px;height:1080px;position:absolute;left:50%;top:50%;transform-origin:center center;
   background:var(--paper);overflow:hidden;box-shadow:0 40px 120px -40px rgba(13,22,32,.5)}
 #stage::before{content:'';position:absolute;inset:0;pointer-events:none;
   background-image:linear-gradient(rgba(23,50,74,.045) 1px,transparent 1px),
@@ -1265,8 +1265,9 @@ interface CDN
   let si=0, fi=0, maxF=0;
 
   function fit(){
-    const s=Math.min(innerWidth/1920, innerHeight/1080);
-    stage.style.transform='scale('+s+')';
+    const viewport=document.getElementById('viewport').getBoundingClientRect();
+    const s=Math.min(viewport.width/1920,viewport.height/1080);
+    stage.style.transform='translate(-50%,-50%) scale('+s+')';
   }
   addEventListener('resize',fit); fit();
 

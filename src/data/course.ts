@@ -65,28 +65,29 @@ export const designPatternsCourse: Course = {
 export const originalDesignPatternsCourse: Course = {
   id: 'design-patterns-original',
   title: '디자인 패턴에 뛰어들기 · 원본 디자인',
-  subtitle: '화려한 슬라이드 디자인과 화면 전환을 그대로 살린 HTML 교안',
+  subtitle: '54개 슬라이드의 디자인과 화면 전환을 그대로 살린 HTML 교안',
   description: '원본 HTML의 레이아웃, 애니메이션, 이전·다음 탐색과 전체화면 학습 경험을 그대로 유지합니다.',
   level: '중급',
   duration: '약 180분',
-  lessons: [
-    {
-      id: 'design-patterns-original-slides',
-      number: '01',
-      title: '원본 HTML 슬라이드 교안',
-      duration: '약 180분',
+  lessons: designPatternLessons.map((lesson, index) => {
+    const blockId = `design-patterns-original-slide-${String(index + 1).padStart(2, '0')}`
+    return {
+      id: blockId,
+      number: String(index + 1).padStart(2, '0'),
+      title: lesson.title,
+      duration: lesson.duration,
       blocks: [
         {
-          type: 'html',
-          id: 'design-patterns-original-slides-complete',
-          src: 'courses/design-patterns/lecture-design-patterns.html?blockId=design-patterns-original-slides-complete',
-          title: '디자인 패턴에 뛰어들기',
-          description: '교안 안의 이전·다음 버튼이나 방향키로 학습하세요. 마지막 화면까지 완료하면 다음 단계가 열립니다.',
+          type: 'html' as const,
+          id: `${blockId}-complete`,
+          src: `courses/design-patterns/lecture-design-patterns.html?embed=1&slide=${index + 1}&blockId=${blockId}-complete`,
+          title: lesson.title,
+          description: '교안 안의 이전·다음 버튼이나 방향키로 내용을 모두 확인하면 다음 슬라이드가 열립니다.',
           required: true,
         },
       ],
-    },
-  ],
+    }
+  }),
 }
 
 export const courses: Course[] = [htmlCourse, designPatternsCourse, originalDesignPatternsCourse]
