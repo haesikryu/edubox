@@ -34,8 +34,11 @@ function App() {
     const synthesis = window.speechSynthesis
     if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
     const requestId = ++speechRequestRef.current
-    synthesis.cancel()
-    synthesis.resume()
+    const wasActive = synthesis.speaking || synthesis.pending || synthesis.paused
+    if (wasActive) {
+      synthesis.cancel()
+      synthesis.resume()
+    }
     setNarrationStatus('preparing')
     setNarrationPaused(false)
 
@@ -72,8 +75,10 @@ function App() {
       synthesis.speak(utterance)
     }
 
-    // Chrome/macOS needs a short gap after cancel() before accepting a new utterance.
-    speechTimerRef.current = window.setTimeout(launch, 180)
+    // Keep the first playback inside the user's click event. Chrome can reject a
+    // first utterance deferred with setTimeout; only replacements need a gap.
+    if (wasActive) speechTimerRef.current = window.setTimeout(launch, 180)
+    else launch()
   }, [narrationEnabled])
 
   useEffect(() => {
