@@ -18,7 +18,7 @@ function App() {
   const [narrationStatus, setNarrationStatus] = useState<'idle' | 'preparing' | 'speaking' | 'error'>('idle')
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
   const speechTimerRef = useRef<number | null>(null)
-  const speechWatchdogRef = useRef<number | null>(null)
+  const speechRequestRef = useRef(0)
   const narrationLessonRef = useRef('')
   const narrationSupported = 'speechSynthesis' in window
   const course = courses.find((item) => item.id === courseId) ?? courses[0]
@@ -33,82 +33,47 @@ function App() {
     if ((!narrationEnabled && !force) || !text || !('speechSynthesis' in window)) return
     const synthesis = window.speechSynthesis
     if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
-    const wasActive = synthesis.speaking || synthesis.pending || synthesis.paused
-    if (wasActive) synthesis.cancel()
+    const requestId = ++speechRequestRef.current
+    synthesis.cancel()
+    synthesis.resume()
     setNarrationStatus('preparing')
     setNarrationPaused(false)
 
-    const launch = (voice?: SpeechSynthesisVoice, retry = false) => {
+    const launch = () => {
+      if (speechRequestRef.current !== requestId) return
+      const voices = synthesis.getVoices()
+      const koreanVoice = voices.find((voice) => voice.name.toLowerCase().includes('yuna'))
+        ?? voices.find((voice) => voice.lang.toLowerCase() === 'ko-kr')
+        ?? voices.find((voice) => voice.lang.toLowerCase().startsWith('ko'))
       const utterance = new SpeechSynthesisUtterance(text)
       utterance.lang = 'ko-KR'
-      utterance.rate = retry ? 1 : 0.95
+      utterance.rate = 0.95
       utterance.pitch = 1
       utterance.volume = 1
-      if (voice) utterance.voice = voice
-      let startedSpeaking = false
+      if (koreanVoice) utterance.voice = koreanVoice
       utterance.onstart = () => {
-        startedSpeaking = true
-        if (speechWatchdogRef.current !== null) window.clearTimeout(speechWatchdogRef.current)
+        if (speechRequestRef.current !== requestId) return
         setNarrationStatus('speaking')
       }
       utterance.onend = () => {
-        if (utteranceRef.current !== utterance) return
-        if (speechWatchdogRef.current !== null) window.clearTimeout(speechWatchdogRef.current)
+        if (speechRequestRef.current !== requestId || utteranceRef.current !== utterance) return
         utteranceRef.current = null
         setNarrationStatus('idle')
         setNarrationPaused(false)
       }
       utterance.onerror = (event) => {
-        if (utteranceRef.current !== utterance) return
-        if (speechWatchdogRef.current !== null) window.clearTimeout(speechWatchdogRef.current)
+        if (speechRequestRef.current !== requestId || utteranceRef.current !== utterance) return
         utteranceRef.current = null
         if (event.error !== 'canceled' && event.error !== 'interrupted') setNarrationStatus('error')
+        else setNarrationStatus('idle')
         setNarrationPaused(false)
       }
       utteranceRef.current = utterance
       synthesis.speak(utterance)
-      speechWatchdogRef.current = window.setTimeout(() => {
-        if (startedSpeaking || utteranceRef.current !== utterance) return
-        synthesis.cancel()
-        utteranceRef.current = null
-        if (retry) setNarrationStatus('error')
-        else {
-          setNarrationStatus('preparing')
-          speechTimerRef.current = window.setTimeout(() => launch(undefined, true), 220)
-        }
-      }, 2500)
     }
 
-    const start = () => {
-      const voices = synthesis.getVoices()
-      if (voices.length) {
-        const koreanVoice = voices.find((voice) => voice.lang.toLowerCase() === 'ko-kr')
-          ?? voices.find((voice) => voice.lang.toLowerCase().startsWith('ko'))
-        launch(koreanVoice)
-        return
-      }
-
-      let voiceEventHandled = false
-      const voicesReady = () => {
-        if (voiceEventHandled) return
-        voiceEventHandled = true
-        if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
-        const loadedVoices = synthesis.getVoices()
-        const koreanVoice = loadedVoices.find((voice) => voice.lang.toLowerCase() === 'ko-kr')
-          ?? loadedVoices.find((voice) => voice.lang.toLowerCase().startsWith('ko'))
-        launch(koreanVoice)
-      }
-      synthesis.addEventListener('voiceschanged', voicesReady, { once: true })
-      speechTimerRef.current = window.setTimeout(() => {
-        if (voiceEventHandled) return
-        voiceEventHandled = true
-        synthesis.removeEventListener('voiceschanged', voicesReady)
-        launch(undefined)
-      }, 1000)
-    }
-
-    if (wasActive) speechTimerRef.current = window.setTimeout(start, 180)
-    else start()
+    // Chrome/macOS needs a short gap after cancel() before accepting a new utterance.
+    speechTimerRef.current = window.setTimeout(launch, 180)
   }, [narrationEnabled])
 
   useEffect(() => {
@@ -132,7 +97,7 @@ function App() {
     setNarrationPaused(false)
     setNarrationStatus('idle')
     if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
-    if (speechWatchdogRef.current !== null) window.clearTimeout(speechWatchdogRef.current)
+    speechRequestRef.current += 1
     window.speechSynthesis?.cancel()
     if (started && narrationEnabled && lesson.narration?.length) {
       speechTimerRef.current = window.setTimeout(() => speakNarration(lesson.narration?.[0] ?? lesson.title, true), 300)
@@ -141,7 +106,7 @@ function App() {
 
   useEffect(() => () => {
     if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
-    if (speechWatchdogRef.current !== null) window.clearTimeout(speechWatchdogRef.current)
+    speechRequestRef.current += 1
     window.speechSynthesis?.cancel()
   }, [])
 
@@ -152,7 +117,7 @@ function App() {
   const toggleNarration = () => {
     if (narrationEnabled) {
       if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
-      if (speechWatchdogRef.current !== null) window.clearTimeout(speechWatchdogRef.current)
+      speechRequestRef.current += 1
       window.speechSynthesis?.cancel()
       localStorage.setItem('edubox:narration', 'off')
       setNarrationEnabled(false)
