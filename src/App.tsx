@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronLeft, Clock, Menu, Pause, Play, RotateCcw, Sparkles, Volume2, VolumeX, X } from 'lucide-react'
 import { courses } from './data/course'
 import { ContentBlock } from './components/ContentBlock'
@@ -15,6 +15,9 @@ function App() {
   const [narrationEnabled, setNarrationEnabled] = useState(() => localStorage.getItem('edubox:narration') === 'on')
   const [narrationStep, setNarrationStep] = useState(0)
   const [narrationPaused, setNarrationPaused] = useState(false)
+  const [narrationStatus, setNarrationStatus] = useState<'idle' | 'preparing' | 'speaking' | 'error'>('idle')
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
+  const speechTimerRef = useRef<number | null>(null)
   const narrationSupported = 'speechSynthesis' in window
   const course = courses.find((item) => item.id === courseId) ?? courses[0]
   const lesson = course.lessons[current]
@@ -26,17 +29,41 @@ function App() {
 
   const speakNarration = useCallback((text: string, force = false) => {
     if ((!narrationEnabled && !force) || !text || !('speechSynthesis' in window)) return
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'ko-KR'
-    utterance.rate = 0.95
-    utterance.pitch = 1
-    const koreanVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith('ko'))
-    if (koreanVoice) utterance.voice = koreanVoice
-    utterance.onend = () => setNarrationPaused(false)
-    utterance.onerror = () => setNarrationPaused(false)
+    const synthesis = window.speechSynthesis
+    if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
+    const wasActive = synthesis.speaking || synthesis.pending || synthesis.paused
+    if (wasActive) synthesis.cancel()
+    setNarrationStatus('preparing')
     setNarrationPaused(false)
-    window.speechSynthesis.speak(utterance)
+
+    const start = () => {
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = 'ko-KR'
+      utterance.rate = 0.95
+      utterance.pitch = 1
+      utterance.volume = 1
+      const voices = synthesis.getVoices()
+      const koreanVoice = voices.find((voice) => voice.lang.toLowerCase() === 'ko-kr')
+        ?? voices.find((voice) => voice.lang.toLowerCase().startsWith('ko'))
+      if (koreanVoice) utterance.voice = koreanVoice
+      utterance.onstart = () => setNarrationStatus('speaking')
+      utterance.onend = () => {
+        utteranceRef.current = null
+        setNarrationStatus('idle')
+        setNarrationPaused(false)
+      }
+      utterance.onerror = (event) => {
+        utteranceRef.current = null
+        if (event.error !== 'canceled' && event.error !== 'interrupted') setNarrationStatus('error')
+        setNarrationPaused(false)
+      }
+      utteranceRef.current = utterance
+      synthesis.resume()
+      synthesis.speak(utterance)
+    }
+
+    if (wasActive) speechTimerRef.current = window.setTimeout(start, 180)
+    else start()
   }, [narrationEnabled])
 
   useEffect(() => {
@@ -55,17 +82,24 @@ function App() {
   useEffect(() => {
     setNarrationStep(0)
     setNarrationPaused(false)
+    setNarrationStatus('idle')
+    if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
     window.speechSynthesis?.cancel()
   }, [courseId, current])
 
-  useEffect(() => () => window.speechSynthesis?.cancel(), [])
+  useEffect(() => () => {
+    if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
+    window.speechSynthesis?.cancel()
+  }, [])
 
   const toggleNarration = () => {
     if (narrationEnabled) {
+      if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
       window.speechSynthesis?.cancel()
       localStorage.setItem('edubox:narration', 'off')
       setNarrationEnabled(false)
       setNarrationPaused(false)
+      setNarrationStatus('idle')
       return
     }
     localStorage.setItem('edubox:narration', 'on')
@@ -78,6 +112,7 @@ function App() {
     if (window.speechSynthesis.paused) {
       window.speechSynthesis.resume()
       setNarrationPaused(false)
+      setNarrationStatus('speaking')
     } else if (window.speechSynthesis.speaking) {
       window.speechSynthesis.pause()
       setNarrationPaused(true)
@@ -142,7 +177,7 @@ function App() {
         <div className="mode-note"><span className={isSupabaseConfigured ? 'online' : ''} />{isSupabaseConfigured ? 'Supabase 연결됨' : '데모 모드 · 이 기기에 저장'}</div>
       </aside>
       <main className="lesson-main">
-        <header className="lesson-top"><button className="menu-button" onClick={() => setSidebarOpen(true)}><Menu /></button><div><BookOpen size={16} /><span>레슨 {lesson.number}</span><i />{lesson.duration}</div>{lesson.narration && <div className="narration-controls" data-narration-step={narrationStep}><button className={narrationEnabled ? 'active' : ''} onClick={toggleNarration} disabled={!narrationSupported} aria-pressed={narrationEnabled} title={!narrationSupported ? '이 브라우저는 음성 해설을 지원하지 않습니다' : narrationEnabled ? '음성 해설 끄기' : '음성 해설 켜기'}>{narrationEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}<span>음성 해설</span></button><button onClick={() => speakNarration(lesson.narration?.[narrationStep] ?? lesson.title, true)} disabled={!narrationEnabled || !narrationSupported} title="현재 설명 다시 듣기"><RotateCcw size={15} /><span>다시 듣기</span></button><button onClick={toggleNarrationPause} disabled={!narrationEnabled || !narrationSupported} title={narrationPaused ? '계속 듣기' : '일시정지'}>{narrationPaused ? <Play size={15} /> : <Pause size={15} />}<span>{narrationPaused ? '계속' : '일시정지'}</span></button></div>}<Logo compact /></header>
+        <header className="lesson-top"><button className="menu-button" onClick={() => setSidebarOpen(true)}><Menu /></button><div><BookOpen size={16} /><span>레슨 {lesson.number}</span><i />{lesson.duration}</div>{lesson.narration && <div className="narration-controls" data-narration-step={narrationStep} data-narration-status={narrationStatus}><button className={narrationEnabled ? 'active' : ''} onClick={toggleNarration} disabled={!narrationSupported} aria-pressed={narrationEnabled} title={!narrationSupported ? '이 브라우저는 음성 해설을 지원하지 않습니다' : narrationEnabled ? '음성 해설 끄기' : '음성 해설 켜기'}>{narrationEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}<span>음성 해설</span></button><button onClick={() => speakNarration(lesson.narration?.[narrationStep] ?? lesson.title, true)} disabled={!narrationEnabled || !narrationSupported} title="현재 설명 다시 듣기"><RotateCcw size={15} /><span>다시 듣기</span></button><button onClick={toggleNarrationPause} disabled={!narrationEnabled || !narrationSupported} title={narrationPaused ? '계속 듣기' : '일시정지'}>{narrationPaused ? <Play size={15} /> : <Pause size={15} />}<span>{narrationPaused ? '계속' : '일시정지'}</span></button>{narrationEnabled && <em className={`narration-status ${narrationStatus}`}>{narrationStatus === 'preparing' ? '음성 준비 중' : narrationStatus === 'speaking' ? '재생 중' : narrationStatus === 'error' ? '재생 실패 · 다시 듣기를 눌러주세요' : '준비됨'}</em>}</div>}<Logo compact /></header>
         <article className="lesson-content"><div className="lesson-title"><span>{lesson.number}</span><h1>{lesson.title}</h1><p>{course.subtitle}</p></div>{lesson.blocks.map((block, index) => <ContentBlock key={`${block.type}-${'id' in block ? block.id : index}`} block={block} passed={(block.type === 'quiz' || block.type === 'html') && progress.passedQuizzes.includes(block.id)} onQuizPass={passQuiz} />)}</article>
         <footer className="lesson-footer"><button className="prev" disabled={current === 0} onClick={() => { setCurrent(current - 1); window.scrollTo(0, 0) }}><ArrowLeft size={18} /> 이전 레슨</button><div>{!canComplete && <p>필수 학습을 완료하면 다음 단계가 열립니다.</p>}<button className="next" disabled={!canComplete} onClick={goNext}>{current === course.lessons.length - 1 ? '강의 완료하기' : '다음 레슨'} <ArrowRight size={18} /></button></div></footer>
       </main>
