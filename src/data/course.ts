@@ -106,4 +106,5 @@ export const originalDesignPatternsCourse: Course = {
   }),
 }
 
-export const courses: Course[] = [htmlCourse, designPatternsCourse, originalDesignPatternsCourse]
+// 요약형 디자인 패턴 과정은 데이터는 보존하되 강의 목록에서는 비활성화합니다.
+export const courses: Course[] = [htmlCourse, originalDesignPatternsCourse]
