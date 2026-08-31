@@ -18,6 +18,7 @@ function App() {
   const [narrationStatus, setNarrationStatus] = useState<'idle' | 'preparing' | 'speaking' | 'error'>('idle')
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
   const speechTimerRef = useRef<number | null>(null)
+  const narrationLessonRef = useRef('')
   const narrationSupported = 'speechSynthesis' in window
   const course = courses.find((item) => item.id === courseId) ?? courses[0]
   const lesson = course.lessons[current]
@@ -80,12 +81,18 @@ function App() {
   }, [lesson, speakNarration])
 
   useEffect(() => {
+    const lessonKey = `${courseId}:${current}`
+    if (narrationLessonRef.current === lessonKey) return
+    narrationLessonRef.current = lessonKey
     setNarrationStep(0)
     setNarrationPaused(false)
     setNarrationStatus('idle')
     if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
     window.speechSynthesis?.cancel()
-  }, [courseId, current])
+    if (started && narrationEnabled && lesson.narration?.length) {
+      speechTimerRef.current = window.setTimeout(() => speakNarration(lesson.narration?.[0] ?? lesson.title, true), 300)
+    }
+  }, [courseId, current, lesson, narrationEnabled, speakNarration, started])
 
   useEffect(() => () => {
     if (speechTimerRef.current !== null) window.clearTimeout(speechTimerRef.current)
@@ -116,6 +123,8 @@ function App() {
     } else if (window.speechSynthesis.speaking) {
       window.speechSynthesis.pause()
       setNarrationPaused(true)
+    } else {
+      speakNarration(lesson.narration?.[narrationStep] ?? lesson.title, true)
     }
   }
 
@@ -177,7 +186,7 @@ function App() {
         <div className="mode-note"><span className={isSupabaseConfigured ? 'online' : ''} />{isSupabaseConfigured ? 'Supabase 연결됨' : '데모 모드 · 이 기기에 저장'}</div>
       </aside>
       <main className="lesson-main">
-        <header className="lesson-top"><button className="menu-button" onClick={() => setSidebarOpen(true)}><Menu /></button><div><BookOpen size={16} /><span>레슨 {lesson.number}</span><i />{lesson.duration}</div>{lesson.narration && <div className="narration-controls" data-narration-step={narrationStep} data-narration-status={narrationStatus}><button className={narrationEnabled ? 'active' : ''} onClick={toggleNarration} disabled={!narrationSupported} aria-pressed={narrationEnabled} title={!narrationSupported ? '이 브라우저는 음성 해설을 지원하지 않습니다' : narrationEnabled ? '음성 해설 끄기' : '음성 해설 켜기'}>{narrationEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}<span>음성 해설</span></button><button onClick={() => speakNarration(lesson.narration?.[narrationStep] ?? lesson.title, true)} disabled={!narrationEnabled || !narrationSupported} title="현재 설명 다시 듣기"><RotateCcw size={15} /><span>다시 듣기</span></button><button onClick={toggleNarrationPause} disabled={!narrationEnabled || !narrationSupported} title={narrationPaused ? '계속 듣기' : '일시정지'}>{narrationPaused ? <Play size={15} /> : <Pause size={15} />}<span>{narrationPaused ? '계속' : '일시정지'}</span></button>{narrationEnabled && <em className={`narration-status ${narrationStatus}`}>{narrationStatus === 'preparing' ? '음성 준비 중' : narrationStatus === 'speaking' ? '재생 중' : narrationStatus === 'error' ? '재생 실패 · 다시 듣기를 눌러주세요' : '준비됨'}</em>}</div>}<Logo compact /></header>
+        <header className="lesson-top"><button className="menu-button" onClick={() => setSidebarOpen(true)}><Menu /></button><div><BookOpen size={16} /><span>레슨 {lesson.number}</span><i />{lesson.duration}</div>{lesson.narration && <div className="narration-controls" data-narration-step={narrationStep} data-narration-status={narrationStatus}><button className={narrationEnabled ? 'active' : ''} onClick={toggleNarration} disabled={!narrationSupported} aria-pressed={narrationEnabled} title={!narrationSupported ? '이 브라우저는 음성 해설을 지원하지 않습니다' : narrationEnabled ? '음성 해설 끄기' : '음성 해설 켜기'}>{narrationEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}<span>음성 해설</span></button><button onClick={() => speakNarration(lesson.narration?.[narrationStep] ?? lesson.title, true)} disabled={!narrationEnabled || !narrationSupported} title="현재 설명 다시 듣기"><RotateCcw size={15} /><span>다시 듣기</span></button><button onClick={toggleNarrationPause} disabled={!narrationEnabled || !narrationSupported} title={narrationPaused ? '계속 듣기' : narrationStatus === 'speaking' ? '일시정지' : '현재 설명 재생'}>{narrationPaused || narrationStatus !== 'speaking' ? <Play size={15} /> : <Pause size={15} />}<span>{narrationPaused ? '계속' : narrationStatus === 'speaking' ? '일시정지' : '재생'}</span></button>{narrationEnabled && <em className={`narration-status ${narrationStatus}`}>{narrationStatus === 'preparing' ? '음성 준비 중' : narrationStatus === 'speaking' ? '재생 중' : narrationStatus === 'error' ? '재생 실패 · 다시 듣기를 눌러주세요' : '준비됨'}</em>}</div>}<Logo compact /></header>
         <article className="lesson-content"><div className="lesson-title"><span>{lesson.number}</span><h1>{lesson.title}</h1><p>{course.subtitle}</p></div>{lesson.blocks.map((block, index) => <ContentBlock key={`${block.type}-${'id' in block ? block.id : index}`} block={block} passed={(block.type === 'quiz' || block.type === 'html') && progress.passedQuizzes.includes(block.id)} onQuizPass={passQuiz} />)}</article>
         <footer className="lesson-footer"><button className="prev" disabled={current === 0} onClick={() => { setCurrent(current - 1); window.scrollTo(0, 0) }}><ArrowLeft size={18} /> 이전 레슨</button><div>{!canComplete && <p>필수 학습을 완료하면 다음 단계가 열립니다.</p>}<button className="next" disabled={!canComplete} onClick={goNext}>{current === course.lessons.length - 1 ? '강의 완료하기' : '다음 레슨'} <ArrowRight size={18} /></button></div></footer>
       </main>
