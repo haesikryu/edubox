@@ -27,6 +27,7 @@ export type LessonPage = {
   number: string
   title: string
   duration: string
+  narration?: string[]
   blocks: ContentBlock[]
 }
 

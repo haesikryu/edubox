@@ -1277,7 +1277,8 @@ interface CDN
     maxF = v.length ? Math.max(...v) : 0;
   }
   function paint(){
-    frags().forEach(e=>e.classList.toggle('on',(+e.dataset.f||0)<=fi));
+    const slideFragments=frags();
+    slideFragments.forEach(e=>e.classList.toggle('on',(+e.dataset.f||0)<=fi));
     partEl.textContent=slides[si].dataset.part||'';
     cntEl.innerHTML='<b>'+String(si+1).padStart(2,'0')+'</b> / '+slides.length;
     prog.style.width=((si)/(slides.length-1)*100)+'%';
@@ -1285,6 +1286,11 @@ interface CDN
     btnNext.disabled=(si===slides.length-1&&fi===maxF);
     if((embed||si===slides.length-1)&&fi===maxF){
       window.parent.postMessage({type:'EDUBOX_COMPLETE',blockId},location.origin);
+    }
+    if(embed){
+      const revealed=slideFragments.filter(e=>(+e.dataset.f||0)===fi);
+      const text=revealed.map(e=>e.innerText.trim()).filter(Boolean).join('. ');
+      window.parent.postMessage({type:'EDUBOX_NARRATE',blockId,step:fi,text},location.origin);
     }
   }
   function show(n,atEnd){

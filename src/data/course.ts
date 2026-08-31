@@ -1,5 +1,20 @@
-import type { Course } from '../types'
+import type { ContentBlock, Course, LessonPage } from '../types'
 import { designPatternLessons } from './designPatternLessons'
+
+function buildNarration(lesson: LessonPage) {
+  const scripts = [`${lesson.title} 슬라이드입니다. 화면의 핵심 내용을 차근차근 살펴보겠습니다.`]
+  lesson.blocks.forEach((block: ContentBlock) => {
+    if (block.type === 'text') scripts.push(`${block.title ? `${block.title}. ` : ''}${block.body}`)
+    if (block.type === 'list') {
+      if (block.title) scripts.push(`${block.title}의 핵심 항목을 살펴보겠습니다.`)
+      block.items.forEach((item, index) => scripts.push(`${index + 1}번째 핵심 내용입니다. ${item}`))
+    }
+    if (block.type === 'reveal') scripts.push(`${block.label}. ${block.body}`)
+    if (block.type === 'code') scripts.push(`${block.title ?? '예제 코드'}를 확인해 보세요. 코드의 세부 문법보다 각 요소가 맡은 역할과 구조에 집중하면 좋습니다.`)
+    if (block.type === 'quiz') scripts.push(`이제 이해한 내용을 확인해 보겠습니다. ${block.question}`)
+  })
+  return scripts
+}
 
 export const htmlCourse: Course = {
   id: 'html-foundations',
@@ -76,6 +91,7 @@ export const originalDesignPatternsCourse: Course = {
       number: String(index + 1).padStart(2, '0'),
       title: lesson.title,
       duration: lesson.duration,
+      narration: buildNarration(lesson),
       blocks: [
         {
           type: 'html' as const,
