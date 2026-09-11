@@ -21,12 +21,13 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;background:#DDE5EC}
+html.is-embed,html.is-embed body{background:var(--paper)}
 body{font-family:var(--f-sans);color:var(--ink);
   word-break:keep-all;overflow-wrap:break-word;line-break:strict;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 
-#viewport{position:fixed;inset:0;overflow:hidden}
-#stage{width:1920px;height:1080px;position:absolute;left:50%;top:50%;transform-origin:center center;
+#viewport{position:fixed;inset:0;overflow:hidden;background:#DDE5EC}
+#stage{width:1920px;height:1080px;position:absolute;left:0;top:0;transform-origin:0 0;
   background:var(--paper);overflow:hidden;box-shadow:0 40px 120px -40px rgba(13,22,32,.5)}
 #stage::before{content:'';position:absolute;inset:0;pointer-events:none;
   background-image:linear-gradient(rgba(23,50,74,.045) 1px,transparent 1px),
@@ -628,6 +629,7 @@ html:fullscreen.ui-show{cursor:default}
   const embed=params.get('embed')==='1';
   const embedSlide=Math.max(1,parseInt(params.get('slide')||'1'));
   const blockId=params.get('blockId')||'domain-storytelling-slides';
+  if(embed) document.documentElement.classList.add('is-embed');
   const stage=document.getElementById('stage');
   const slides=[...document.querySelectorAll('.slide')];
   const partEl=document.querySelector('#chrome .part');
@@ -638,11 +640,19 @@ html:fullscreen.ui-show{cursor:default}
   let si=0, fi=0, maxF=0;
 
   function fit(){
-    const viewport=document.getElementById('viewport').getBoundingClientRect();
-    const s=Math.min(viewport.width/1920,viewport.height/1080);
-    stage.style.transform='translate(-50%,-50%) scale('+s+')';
+    const rect=document.getElementById('viewport').getBoundingClientRect();
+    const s=Math.min(rect.width/1920,rect.height/1080);
+    const x=Math.max(0,(rect.width-1920*s)/2);
+    const y=Math.max(0,(rect.height-1080*s)/2);
+    stage.style.transform='translate('+x+'px,'+y+'px) scale('+s+')';
   }
-  addEventListener('resize',fit); fit();
+  addEventListener('resize',fit);
+  addEventListener('load',fit);
+  if(window.ResizeObserver){
+    new ResizeObserver(fit).observe(document.getElementById('viewport'));
+  }
+  requestAnimationFrame(()=>requestAnimationFrame(fit));
+  fit();
 
   function frags(){return [...slides[si].querySelectorAll('.frg')];}
   function calcMax(){

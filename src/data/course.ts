@@ -136,7 +136,7 @@ export const originalDomainStorytellingCourse: Course = {
         {
           type: 'html' as const,
           id: `${blockId}-complete`,
-          src: `courses/domain-storytelling/lecture-domain-storytelling.html?embed=1&slide=${index + 1}&blockId=${blockId}-complete`,
+          src: `courses/domain-storytelling/lecture-domain-storytelling.html?embed=1&slide=${index + 1}&blockId=${blockId}-complete&v=3`,
           title: lesson.title,
           description: '교안 안의 이전·다음 버튼이나 방향키로 내용을 모두 확인하면 다음 슬라이드가 열립니다.',
           required: true,
