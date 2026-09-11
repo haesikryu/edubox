@@ -1,5 +1,6 @@
 import type { ContentBlock, Course, LessonPage } from '../types'
 import { designPatternLessons } from './designPatternLessons'
+import { domainStorytellingLessons } from './domainStorytellingLessons'
 
 function buildNarration(lesson: LessonPage) {
   const scripts = [`${lesson.title} 슬라이드입니다. 화면의 핵심 내용을 차근차근 살펴보겠습니다.`]
@@ -106,5 +107,44 @@ export const originalDesignPatternsCourse: Course = {
   }),
 }
 
-// 요약형 디자인 패턴 과정은 데이터는 보존하되 강의 목록에서는 비활성화합니다.
-export const courses: Course[] = [htmlCourse, originalDesignPatternsCourse]
+export const domainStorytellingCourse: Course = {
+  id: 'domain-storytelling',
+  title: '도메인 스토리텔링',
+  subtitle: '원본 69개 슬라이드의 전체 내용을 EduBox 스타일로 읽는 강의',
+  description: '픽토그래픽 언어부터 전략·전술 설계와 도구까지 원본 교안 전체를 네이티브 화면으로 학습합니다.',
+  level: '중급',
+  duration: '약 210분',
+  lessons: domainStorytellingLessons,
+}
+
+export const originalDomainStorytellingCourse: Course = {
+  id: 'domain-storytelling-original',
+  title: '도메인 스토리텔링 · 원본 디자인',
+  subtitle: '69개 슬라이드의 디자인과 화면 전환을 그대로 살린 HTML 교안',
+  description: '원본 HTML의 레이아웃, 애니메이션, 이전·다음 탐색과 전체화면 학습 경험을 그대로 유지합니다.',
+  level: '중급',
+  duration: '약 210분',
+  lessons: domainStorytellingLessons.map((lesson, index) => {
+    const blockId = `domain-storytelling-original-slide-${String(index + 1).padStart(2, '0')}`
+    return {
+      id: blockId,
+      number: String(index + 1).padStart(2, '0'),
+      title: lesson.title,
+      duration: lesson.duration,
+      narration: buildNarration(lesson),
+      blocks: [
+        {
+          type: 'html' as const,
+          id: `${blockId}-complete`,
+          src: `courses/domain-storytelling/lecture-domain-storytelling.html?embed=1&slide=${index + 1}&blockId=${blockId}-complete`,
+          title: lesson.title,
+          description: '교안 안의 이전·다음 버튼이나 방향키로 내용을 모두 확인하면 다음 슬라이드가 열립니다.',
+          required: true,
+        },
+      ],
+    }
+  }),
+}
+
+// 요약형 과정은 데이터는 보존하되 강의 목록에서는 원본 HTML 교안만 노출합니다.
+export const courses: Course[] = [htmlCourse, originalDesignPatternsCourse, originalDomainStorytellingCourse]
